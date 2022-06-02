@@ -7,26 +7,8 @@ const {
   GraphQLSchema,
   GraphQLNonNull,
 } = require('graphql')
-const lodash = require('lodash')
-
-
-
-
-// Data Sample
-const Data_Teacher = [
-  { id: "1", name: "Reza", age: 23 },
-  { id: "2", name: "Arash", age: 24 },
-  { id: "3", name: "Zamiar", age: 25 }
-]
-const Data_Lesson = [
-  { id: "1", name: "React", group: "Front", teacherId: "1" },
-  { id: "2", name: "Node", group: "Back", teacherId: "3" },
-  { id: "3", name: "Flutter", group: "Android", teacherId: "2" },
-  { id: "4", name: "PHP", group: "Back", teacherId: "1" },
-  { id: "5", name: "Java", group: "Android", teacherId: "3" },
-  { id: "6", name: "TS", group: "Front", teacherId: "3" },
-  { id: "7", name: "Swift", group: "iphone", teacherId: "2" }
-]
+const TeacherModel = require('../model/Teacher')
+const LessonModel = require('../model/Lesson')
 
 
 
@@ -39,7 +21,7 @@ const TeacherType = new GraphQLObjectType({
     lesson: {
       type: new GraphQLList(LessonType),
       resolve(parent, args) {
-        return lodash.filter(Data_Lesson, { teacherId: parent.id })
+        return LessonModel.find({ teacherId: parent.id })
       }
     }
   })
@@ -55,7 +37,7 @@ const LessonType = new GraphQLObjectType({
     teacher: {
       type: TeacherType,
       resolve(parent, args) {
-        return lodash.find(Data_Teacher, { id: parent.id })
+        return TeacherModel.findById(parent.teacherId)
       }
     }
   })
@@ -70,32 +52,69 @@ const RootQuery = new GraphQLObjectType({
       type: TeacherType,
       args: { id: { type: GraphQLID } },
       resolve(parent, args) {
-        return lodash.find(Data_Teacher, { id: args.id })
+        return TeacherModel.findById(args.id)
       }
     },
     Lesson: {
       type: LessonType,
       args: { id: { type: GraphQLID } },
       resolve(parent, args) {
-        return lodash.find(Data_Lesson, { id: args.id })
+        return LessonModel.findById(args.id)
       }
     },
     allTeachers: {
       type: new GraphQLList(TeacherType),
       resolve() {
-        return Data_Teacher
+        return TeacherModel.find()
       }
     },
     allLessons: {
       type: new GraphQLList(LessonType),
       resolve() {
-        return Data_Teacher
+        return LessonModel.find()
       }
     }
   }
 })
 
 
-module.exports = new GraphQLSchema({
-  query: RootQuery
+
+const Mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    addTeacher: {
+      type: TeacherType,
+      args: {
+        name: { type: new GraphQLNonNull(GraphQLString) },
+        age: { type: GraphQLInt }
+      },
+      resolve(parent, args) {
+        let newTeacher = new TeacherModel({
+          name: args.name,
+          age: args.age
+        })
+        return newTeacher.save()
+      }
+    },
+    addLesson: {
+      type: LessonType,
+      args: {
+        name: { type: new GraphQLNonNull(GraphQLString) },
+        group: { type: GraphQLString },
+        teacherId: { type: GraphQLID }
+      },
+      resolve(parent, args) {
+        let newLesson = new LessonModel({
+          name: args.name,
+          group: args.group,
+          teacherId: args.teacherId
+        })
+        return newLesson.save()
+      }
+    },
+  }
 })
+
+
+
+module.exports = new GraphQLSchema({ query: RootQuery, mutation: Mutation })
