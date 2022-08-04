@@ -1,6 +1,6 @@
 const express = require('express')
-const { graphqlHTTP } = require('express-graphql')
 require('dotenv').config({ path: './config.env' })
+const { graphqlHTTP } = require('express-graphql')
 const schema = require('./Services/GraphQL/schema')
 
 
